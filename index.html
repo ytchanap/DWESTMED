@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>洗碗碟机节能计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>洗碗碟机节能计算器</h1>
+    <form id="calculatorForm">
+        <div class="input-group">
+            <label for="mode">选择结算模式:</label>
+            <select id="mode" onchange="updateInputs()">
+                <option value="selfInvestment">客户自投</option>
+                <option value="gasRecycle">售气回收</option>
+                <option value="energyRecycle">能源售卖回收</option>
+                <option value="contractEnergyRecycle">合同能源回收</option>
+            </select>
+        </div>
+
+        <!-- 通用输入项 -->
+        <div class="input-group" id="powerInput">
+            <label for="power">洗碗碟机总功率 (kW):</label>
+            <input type="number" id="power" step="0.1">
+        </div>
+        <div class="input-group" id="dailyUsageInput">
+            <label for="dailyUsage">洗碗碟机日使用时长 (小时):</label>
+            <input type="number" id="dailyUsage" step="0.1">
+        </div>
+        <div class="input-group" id="annualUsageInput">
+            <label for="annualUsage">洗碗碟机年使用天数 (天/年):</label>
+            <input type="number" id="annualUsage" step="1">
+        </div>
+
+        <!-- 模式特定输入项 -->
+        <div class="input-group" id="electricityPriceInput">
+            <label for="electricityPrice">电价 (元/kWh):</label>
+            <input type="number" id="electricityPrice" step="0.01">
+        </div>
+        <div class="input-group" id="gasSalePriceInput">
+            <label for="gasSalePrice">售气价格 (元/m³):</label>
+            <input type="number" id="gasSalePrice" step="0.01">
+        </div>
+        <div class="input-group" id="gasPurchasePriceInput">
+            <label for="gasPurchasePrice">进气价格 (元/m³):</label>
+            <input type="number" id="gasPurchasePrice" step="0.01">
+        </div>
+        <div class="input-group" id="projectDiscountInput">
+            <label for="projectDiscount">工程优惠 (￥):</label>
+            <input type="number" id="projectDiscount" step="1">
+        </div>
+        <div class="input-group" id="modificationCostInput">
+            <label for="modificationCost">洗碗碟机改造价格 (￥):</label>
+            <input type="number" id="modificationCost" step="1">
+        </div>
+        <div class="input-group" id="projectOtherCostInput">
+            <label for="projectOtherCost">工程及其他价格 (￥):</label>
+            <input type="number" id="projectOtherCost" step="1">
+        </div>
+        <div class="input-group" id="guaranteedUsageInput">
+            <label for="guaranteedUsage">保底用量 (m³):</label>
+            <input type="number" id="guaranteedUsage" step="1">
+        </div>
+        <div class="input-group" id="energyPriceInput">
+            <label for="energyPrice">能源价格 (元/MJ):</label>
+            <input type="number" id="energyPrice" step="0.01">
+        </div>
+        <div class="input-group" id="guaranteedGasUsageInput">
+            <label for="guaranteedGasUsage">保底用气量 (kWh):</label>
+            <input type="number" id="guaranteedGasUsage" step="1">
+        </div>
+        <div class="input-group" id="energySavingRatioInput">
+            <label for="energySavingRatio">燃气公司节能分层比例 (%):</label>
+            <input type="number" id="energySavingRatio" step="0.1">
+        </div>
+
+        <button type="button" onclick="calculate()">计算</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        function updateInputs() {
+            const mode = document.getElementById('mode').value;
+            const inputs = [
+                'electricityPriceInput', 'gasSalePriceInput', 'gasPurchasePriceInput',
+                'projectDiscountInput', 'modificationCostInput', 'projectOtherCostInput',
+                'guaranteedUsageInput', 'energyPriceInput', 'guaranteedGasUsageInput',
+                'energySavingRatioInput'
+            ];
+
+            // 隐藏所有输入项
+            inputs.forEach(input => {
+                document.getElementById(input).style.display = 'none';
+            });
+
+            // 根据模式显示需要的输入项
+            if (mode === 'selfInvestment') {
+                document.getElementById('electricityPriceInput').style.display = 'block';
+                document.getElementById('gasSalePriceInput').style.display = 'block';
+            } else if (mode === 'gasRecycle') {
+                document.getElementById('gasSalePriceInput').style.display = 'block';
+                document.getElementById('gasPurchasePriceInput').style.display = 'block';
+                document.getElementById('projectDiscountInput').style.display = 'block';
+            } else if (mode === 'energyRecycle') {
+                document.getElementById('energyPriceInput').style.display = 'block';
+                document.getElementById('gasPurchasePriceInput').style.display = 'block';
+                document.getElementById('projectOtherCostInput').style.display = 'block';
+                document.getElementById('modificationCostInput').style.display = 'block';
+                document.getElementById('guaranteedUsageInput').style.display = 'block';
+                document.getElementById('guaranteedGasUsageInput').style.display = 'block';
+            } else if (mode === 'contractEnergyRecycle') {
+                document.getElementById('electricityPriceInput').style.display = 'block';
+                document.getElementById('gasSalePriceInput').style.display = 'block';
+                document.getElementById('projectOtherCostInput').style.display = 'block';
+                document.getElementById('modificationCostInput').style.display = 'block';
+                document.getElementById('energySavingRatioInput').style.display = 'block';
+            }
+        }
+
+        function calculate() {
+            const mode = document.getElementById('mode').value;
+            const power = parseFloat(document.getElementById('power').value);
+            const dailyUsage = parseFloat(document.getElementById('dailyUsage').value);
+            const annualUsage = parseFloat(document.getElementById('annualUsage').value);
+            const electricityPrice = parseFloat(document.getElementById('electricityPrice').value);
+            const gasSalePrice = parseFloat(document.getElementById('gasSalePrice').value);
+            const gasPurchasePrice = parseFloat(document.getElementById('gasPurchasePrice').value);
+            const projectDiscount = parseFloat(document.getElementById('projectDiscount').value);
+            const modificationCost = parseFloat(document.getElementById('modificationCost').value);
+            const projectOtherCost = parseFloat(document.getElementById('projectOtherCost').value);
+            const guaranteedUsage = parseFloat(document.getElementById('guaranteedUsage').value);
+            const energyPrice = parseFloat(document.getElementById('energyPrice').value);
+            const guaranteedGasUsage = parseFloat(document.getElementById('guaranteedGasUsage').value);
+            const energySavingRatio = parseFloat(document.getElementById('energySavingRatio').value);
+
+            let resultText = '';
+
+            if (mode === 'selfInvestment') {
+                const annualGasUsage = power * dailyUsage * annualUsage * 3.6 / 36;
+                const energySavingCost = power * dailyUsage * annualUsage * (electricityPrice - (gasSalePrice / 36 * 3.6));
+                let modificationCostFinal = 0;
+                if (power >= 0 && power <= 40) {
+                    modificationCostFinal = 100;
+                } else if (power > 40 && power <= 60) {
+                    modificationCostFinal = 200;
+                } else if (power > 60 && power <= 80) {
+                    modificationCostFinal = 300;
+                } else if (power > 80 && power <= 100) {
+                    modificationCostFinal = 400;
+                }
+                resultText = `年用气量: ${annualGasUsage.toFixed(2)} m³<br>节能费用: ${energySavingCost.toFixed(2)} ￥/年<br>洗碗碟机改造成本: ${modificationCostFinal} ￥`;
+            } else if (mode === 'gasRecycle') {
+                const gasProfit = power * dailyUsage * annualUsage * 3.6 / 36 * (gasSalePrice - gasPurchasePrice);
+                const paybackPeriod = projectDiscount / gasProfit;
+                resultText = `售气毛利: ${gasProfit.toFixed(2)} ￥/年<br>回本期: ${paybackPeriod.toFixed(2)} 年`;
+            } else if (mode === 'energyRecycle') {
+                const energyProfit = (power * dailyUsage * annualUsage * 3.6 * energyPrice) - (power * dailyUsage * annualUsage * 3.6 / 36 * gasPurchasePrice);
+                const paybackPeriod = (projectOtherCost + modificationCost) / energyProfit;
+                const guaranteedEnergyProfit = (guaranteedUsage * 36 * energyPrice) - (guaranteedUsage * gasPurchasePrice);
+                const guaranteedPaybackPeriod = (projectOtherCost + modificationCost) / guaranteedEnergyProfit;
+                resultText = `售能毛利: ${energyProfit.toFixed(2)} ￥/年<br>售能回本期: ${paybackPeriod.toFixed(2)} 年<br>保底用气量售能毛利: ${guaranteedEnergyProfit.toFixed(2)} ￥/年<br>保底用气量售能回本期: ${guaranteedPaybackPeriod.toFixed(2)} 年`;
+            } else if (mode === 'contractEnergyRecycle') {
+                const energyIncome = power * dailyUsage * annualUsage * (electricityPrice - (gasSalePrice / 36 * 3.6)) * energySavingRatio / 100;
+                const paybackPeriod = (projectOtherCost + modificationCost) / energyIncome;
+                resultText = `节能收入: ${energyIncome.toFixed(2)} ￥/年<br>节能收入回本期: ${paybackPeriod.toFixed(2)} 年`;
+            }
+
+            document.getElementById('result').innerHTML = resultText;
+        }
+
+        // 初始化时更新输入项
+        updateInputs();
+    </script>
+</body>
+</html>
